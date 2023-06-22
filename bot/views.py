@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.http import HttpResponseForbidden, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 from httplib2 import Http
@@ -19,9 +19,11 @@ import pytz
 import logging
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 import openai
+from .models import User
+import tempfile
 
 
 CLIENT_ID = os.environ["CLIENT_ID"]
@@ -29,11 +31,68 @@ CLIENT_SECRET = os.environ["CLIENT_SECRET"]
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 CHANNEL_SECRET = os.environ["CHANNEL_SECRET"]
 CHATGPT_API_KEY = os.environ["CHATGPT_API_KEY"]
+GOOGLE_REDIRECT_URI = os.environ["GOOGLE_REDIRECT_URI"]
+CREDENTIALS = os.environ["CREDENTIALS"]
 
 
 line_bot_api = LineBotApi(ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
+
+def google_auth(request):
+    credentials_dict = {
+        "web": {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "redirect_uris": [GOOGLE_REDIRECT_URI],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://accounts.google.com/o/oauth2/token"
+        }
+    }
+
+    # 一時ファイルに認証情報を書き込む
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+        temp_file.write(json.dumps(credentials_dict))
+
+    # 一時ファイルのパスを取得
+    temp_file_path = temp_file.name
+
+    # Flow.from_client_secrets_file()メソッドで一時ファイルを使用
+    flow = Flow.from_client_secrets_file(
+        temp_file_path,
+        scopes=['https://www.googleapis.com/auth/calendar.events.readonly'],
+        redirect_uri=GOOGLE_REDIRECT_URI
+    )
+
+    # 一時ファイルを削除
+    os.remove(temp_file_path)
+
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+
+    request.session['state'] = state
+    return redirect(authorization_url)
+
+
+def google_auth_callback(request):
+    state = request.session.pop('state', None)
+
+    flow = Flow.from_client_secrets_file(
+        'path/to/your/credentials.json',
+        scopes=['https://www.googleapis.com/auth/calendar.events.readonly'],
+        state=state,
+        redirect_uri=GOOGLE_REDIRECT_URI
+    )
+
+    flow.fetch_token(authorization_response=request.get_full_path())
+
+    credentials = flow.credentials
+
+    # credentialsを使用してGoogleカレンダーAPIにアクセス
+
+    return redirect("")  # 認証後にリダイレクトするURLを指定
 
 @csrf_exempt
 def callback(request):
@@ -61,16 +120,29 @@ def handle_text_message(event):
     # logger.info(event)
     user_id = event.source.user_id
     input_text = event.message.text
+
+    user, created = User.objects.update_or_create(
+        line_user_id=user_id,
+        defaults={'google_calendar_id': 'tamosongyuan3@gmail.com'} # TODO
+    )
+
     if input_text.find("予定") >= 0 or input_text.find("スケジュール") >= 0:
         message, event_list = today_schedule(calendar_id="tamosongyuan3@gmail.com")
         weather = weather_forecast(event_list=event_list)
         message += weather
     elif input_text.find("食材") >= 0 or input_text.find("冷蔵庫") >= 0:
-        message = food_suggest(user_id=user_id)
+        message = food_suggest(user_id=user.line_user_id)
     else:
         message = free_talk(input_text=input_text)
 
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+
+
+def send_auth_url(user_id):
+    auth_url = 'http://your-domain.com/auth/google/'  # Google認証のURL
+    
+    message = TextSendMessage(text='Google認証を行うために以下のリンクをクリックしてください: {}'.format(auth_url))
+    line_bot_api.push_message(user_id, message)
 
 
 # def today_schedule(calendar_id: str)-> tuple:
