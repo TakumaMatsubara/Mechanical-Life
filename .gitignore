@@ -7,6 +7,7 @@ settings_local.py
 
 # google map　API関連
 credentials.json
+client_secrets.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

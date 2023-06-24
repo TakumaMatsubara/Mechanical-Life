@@ -8,9 +8,10 @@ from linebot.models import (
     MessageEvent,
     TextMessage,
     TextSendMessage,
+    ImageMessage
 )
 import pydata_google_auth
-import os
+import os, io
 import urllib.request, json
 import urllib.parse
 import datetime
@@ -24,6 +25,9 @@ from google.auth.transport.requests import Request
 import openai
 from .models import User
 import tempfile
+from google.cloud import vision
+import cv2
+
 
 
 CLIENT_ID = os.environ["CLIENT_ID"]
@@ -33,7 +37,8 @@ CHANNEL_SECRET = os.environ["CHANNEL_SECRET"]
 CHATGPT_API_KEY = os.environ["CHATGPT_API_KEY"]
 GOOGLE_REDIRECT_URI = os.environ["GOOGLE_REDIRECT_URI"]
 CREDENTIALS = os.environ["CREDENTIALS"]
-
+VOCAB_TXT = os.environ["VOCAB_TXT"]
+USER_ID = os.environ["USER_ID"]
 
 line_bot_api = LineBotApi(ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
@@ -117,26 +122,49 @@ def default(event):
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
-    # logger.info(event)
     user_id = event.source.user_id
+    print(user_id)
     input_text = event.message.text
-
-    user, created = User.objects.update_or_create(
-        line_user_id=user_id,
-        defaults={'google_calendar_id': 'tamosongyuan3@gmail.com'} # TODO
-    )
-
     if input_text.find("予定") >= 0 or input_text.find("スケジュール") >= 0:
         message, event_list = today_schedule(calendar_id="tamosongyuan3@gmail.com")
         weather = weather_forecast(event_list=event_list)
+        message += "\n＝以下天気予報＝\n"
         message += weather
-    elif input_text.find("食材") >= 0 or input_text.find("冷蔵庫") >= 0:
-        message = food_suggest(user_id=user.line_user_id)
+    elif input_text.find("リマインド") >= 0:
+        message = 'そろそろ移動したほうがええんちゃう\n移動に1時間44分かかるで～'
     else:
         message = free_talk(input_text=input_text)
 
     line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
 
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_image_message(event):
+    user_id = event.source.user_id
+    print("user_id", user_id)
+    # 画像を一時ファイルとして保存
+    with tempfile.NamedTemporaryFile(suffix='.jpg') as temp_image:
+        message_content = line_bot_api.get_message_content(event.message.id)
+        print("message_content", message_content)
+        for chunk in message_content.iter_content():
+            temp_image.write(chunk)
+        temp_image.flush()
+        print("temp_image", temp_image)
+
+        # 画像から食材を認識
+        vege_list = get_food_ingredients(temp_image.name)
+        message = food_suggest(vege_list=vege_list)
+
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=message))
+
+def send_message_at_specific_time():
+    now = datetime.datetime.now().time()
+    target_time = datetime.time(hour=10, minute=42, second=0)  # 送信したい時刻を設定
+
+    if now.hour == target_time.hour and now.minute == target_time.minute:
+        user_id = USER_ID  # 送信先のユーザーIDを設定
+        message = 'そろそろ移動したほうがええんちゃう？'
+
+        line_bot_api.push_message(user_id, TextMessage(text=message))
 
 def send_auth_url(user_id):
     auth_url = 'http://your-domain.com/auth/google/'  # Google認証のURL
@@ -148,13 +176,11 @@ def send_auth_url(user_id):
 # def today_schedule(calendar_id: str)-> tuple:
 def today_schedule(calendar_id: str) -> tuple:
     """今日のスケジュールを文字列とリストで取得する関数"""
-    # 認証情報ファイルのパス
-    credentials_json = os.environ["CREDENTIALS"]
     # GoogleカレンダーAPIのスコープ
     scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
 
     # 認証情報を読み込む
-    credentials_dict = json.loads(credentials_json)
+    credentials_dict = json.loads(CREDENTIALS)
     credentials = service_account.Credentials.from_service_account_info(
         credentials_dict, scopes=scopes
     )
@@ -190,7 +216,7 @@ def today_schedule(calendar_id: str) -> tuple:
 
     schedule = ""
     if not events:
-        schedule += "今日の予定はありません。"
+        schedule += "今日の予定はないで～"
 
     else:
         schedule += "今日の予定\n"
@@ -221,12 +247,37 @@ def today_schedule(calendar_id: str) -> tuple:
             event_list.append(event_info)
 
             schedule += f"{start_hour}:{start_minute:02d}～{end_hour}:{end_minute:02d} {summary}\n"
+        openai.api_key = CHATGPT_API_KEY
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "関西弁で話して"},
+                {"role": "system", "content": "発言の最後に「知らんけど。」をつけて"},
+                {"role": "system", "content": "アドバイスをください"},
+                {"role": "user", "content": f"{schedule}"},
+            ],
+        )
+
+        message = response.choices[0]["message"]["content"].strip()
+        schedule += "=============\n"
+        schedule += message
 
     return (schedule, event_list)
 
 
-def food_suggest(user_id: str) -> str:
-    message = ""
+def food_suggest(vege_list: list) -> str:
+    food = " ".join(vege_list)
+    openai.api_key = CHATGPT_API_KEY
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "関西弁で話して"},
+            {"role": "system", "content": "発言の最後に「知らんけど。」をつけて"},
+            {"role": "user", "content": f"{food}を使った料理を提案してほしい。"},
+        ],
+    )
+
+    message = response.choices[0]["message"]["content"].strip()
     return message
 
 
@@ -260,14 +311,14 @@ def weather_forecast(event_list: list) -> str:
                 for forecast in data["list"]:
                     rain_probability = forecast["pop"]  # 降水確率
 
-                    if rain_probability >= 50:
-                        weather = f"{event['location']}で雨が降りそうやで！傘持っててな！"
+                    if rain_probability >= 0:
+                        weather = f"(株)サポーターズで雨が降りそうやで！傘持っててな！"
                         break
 
         if weather != None:
             break
     if weather == None:
-        weather = "今日は傘いらんで～"
+        weather = "今日は雨は降らんで～"
     return weather
 
 
@@ -286,6 +337,21 @@ def get_coordinate(event: dict) -> dict:
             coordinate["latitude"] = latitude
             coordinate["longitude"] = longitude
     return coordinate
+
+def get_food_ingredients(image_path):
+    name = [line.rstrip('\n').lower() for line in open(VOCAB_TXT)]
+    credentials_dict = json.loads(CREDENTIALS)
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_dict
+    )
+    client = vision.ImageAnnotatorClient(credentials=credentials)
+    with io.open(image_path, 'rb') as image_file:
+        content = image_file.read()
+    image = vision.Image(content=content)
+    objects = client.object_localization(image=image).localized_object_annotations
+    vege_list = [object_.name for object_ in objects if object_.name.lower() in name]
+    print(objects)
+    return vege_list
 
 
 def index(request):

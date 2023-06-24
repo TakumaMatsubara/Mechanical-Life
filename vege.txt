@@ -1,0 +1,245 @@
+leaf vegetable
+aubergine (eggplant)
+asparagus
+broccoflower (a hybrid)
+broccoli (calabrese)
+brussels sprouts
+cabbage
+kohlrabi
+Savoy cabbage
+red cabbage
+cauliflower
+celery
+endive
+fiddleheads
+frisee
+fennel
+greens
+arugula
+bok choy
+chard (beet greens)
+collard greens
+kale
+lettuce
+mustard greens
+spinach
+herbs
+anise
+basil
+caraway
+coriander
+chamomile
+daikon
+dill
+fennel
+lavender
+cymbopogon (also known as lemongrass)
+marjoram
+oregano
+parsley
+rosemary
+thyme
+legumes
+alfalfa sprouts
+azuki beans (or adzuki)
+bean sprouts
+black beans
+black-eyed peas
+borlotti bean
+broad beans
+chickpeas, garbanzos, or ceci beans
+green beans
+kidney beans
+lentils
+lima beans or butter bean
+mung beans
+navy beans
+peanuts
+pinto beans
+runner beans
+split peas
+soy beans
+peas
+mange tout or snap peas
+mushrooms (actually a fungus, not a plant)
+nettles
+New Zealand spinach
+okra
+onions
+chives
+garlic
+leek
+onion
+shallot
+scallion (spring onion UK, green onion US)
+peppers
+bell pepper
+chili pepper
+habanero
+paprika
+tabasco pepper
+cayenne pepper
+radicchio
+rhubarb
+root vegetables
+beetroot (UK) beet (US)
+mangelwurzel: a variety of beet used mostly as cattlefeed
+carrot
+celeriac
+corms
+eddoe
+konjac
+taro
+water chestnut
+ginger
+parsnip
+rutabaga
+radish
+wasabi
+horseradish
+daikon or white radish
+tubers
+jicama
+jerusalem artichoke
+potato
+sweet potato
+yam
+turnip
+salsify
+skirret
+sweetcorn
+topinambur
+squashes
+acorn squash
+bitter melon
+butternut squash
+banana squash
+Zucchini (US)
+cucumber
+delicata
+gem squash
+hubbard squash
+Squash
+spaghetti squash
+tat soi
+tomato
+watercress
+Apple
+Akee
+Apricot
+Avocado
+Banana
+Bilberry
+Blackberry
+Blackcurrant
+Black sapote
+Blueberry
+Boysenberry
+Buddha's hand
+fingered citron
+Crab apples
+Currant
+Cherry
+Cherimoya
+Custard Apple
+Chico fruit
+Cloudberry
+Coconut
+Cranberry
+Cucumber
+Damson
+Date
+Dragonfruit
+Pitaya
+Durian
+Elderberry
+Feijoa
+Fig
+Goji berry
+Gooseberry
+Grape
+Raisin
+Grapefruit
+Guava
+Honeyberry
+Huckleberry
+Jabuticaba
+Jackfruit
+Jambul
+Japanese plum
+Jostaberry
+Jujube
+Juniper berry
+Kiwano
+horned melon
+Kiwifruit
+Kumquat
+Lemon
+Lime
+Loquat
+Longan
+Lychee
+Mango
+Mangosteen
+Marionberry
+Melon
+Cantaloupe
+Honeydew
+Watermelon
+Miracle fruit
+Mulberry
+Nectarine
+Nance
+Olive
+Orange
+Blood orange
+Clementine
+Mandarine
+Tangerine
+Papaya
+Passionfruit
+Peach
+Pear
+Persimmon
+Plantain
+Plum
+Prune
+Pineapple
+Pineberry
+Plumcot
+Pluot
+Pomegranate
+Pomelo
+Purple mangosteen
+Quince
+Raspberry
+Salmonberry
+Rambutan
+Mamin Chino
+Redcurrant
+Salal berry
+Salak
+Satsuma
+Soursop
+Star apple
+Star fruit
+Strawberry
+Surinam cherry
+Tamarillo
+Tamarind
+Ugli fruit
+White currant
+White sapote
+Yuzu
+Avocado
+Bell pepper
+Chili pepper
+Corn kernel
+Cucumber
+Eggplant
+Olive
+Pea
+Pumpkin
+Squash
+Tomato
+Zucchini
