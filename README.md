@@ -1,6 +1,8 @@
-# Re_Mechanical_Life
+# Mechanical_Life
 
 技育アドバンス公開作品
+![image](https://github.com/TakumaMatsubara/Mechanical-Life/assets/93569834/68c12b91-0cd6-4654-806a-847196601c7c)
+
 
 # 開発区分担当
 - GPTAPIでの応答処理
